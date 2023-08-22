@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: backend-cockfighting-database
+    restart: always
+    environment: 
+      - POSTGRES_PASSWORD=fight
+      - POSTGRES_DB=fight
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5458:5432
+    networks:
+      - fight-pit
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  fight-pit:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,10 @@
+[requires]
+zlib/1.2.13
+drogon/1.8.4
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[options]
+drogon/1.8.4:with_postgres=True

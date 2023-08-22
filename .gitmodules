@@ -1,0 +1,3 @@
+[submodule "modules/uuid_v4"]
+	path = modules/uuid_v4
+	url = git@github.com:crashoz/uuid_v4.git

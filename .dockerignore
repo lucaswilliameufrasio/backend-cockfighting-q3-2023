@@ -1,0 +1,13 @@
+build
+!build/backend-cockfighting-api
+uploads
+
+.env
+
+
+CMakeUserPresets.json
+CMakePresets.json
+CMakeCache.txt
+
+CMakeFiles
+.cmake
