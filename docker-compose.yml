@@ -8,7 +8,7 @@ services:
       - PORT=80
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_PORT=fight
+      - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=70
@@ -29,7 +29,7 @@ services:
       - PORT=80
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_PORT=fight
+      - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=70
