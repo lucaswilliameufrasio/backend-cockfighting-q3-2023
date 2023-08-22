@@ -102,20 +102,21 @@ int main()
 {
     const auto port(atoi(getenv("PORT")));
 
+    const auto dbMaxConnections(atol(getenv("DB_MAX_CONNECTIONS")));
+
     logInfo("Starting backend-cockfighting-api server on http://localhost:" + to_string(port));
 
     const char *dbHost = getenv("DB_HOST");
-    const char *dbPort = getenv("DB_PORT");
+    const auto dbPort(atoi(getenv("DB_PORT")));
     const char *dbName = getenv("DB_NAME");
     const char *dbUser = getenv("DB_USER");
     const char *dbPassword = getenv("DB_PASSWORD");
-    const char *dbMaxConnections = getenv("DB_MAX_CONNECTIONS");
 
     app()
         .addListener("0.0.0.0", port)
         .setThreadNum(0);
 
-    app().createDbClient("postgresql", dbHost, atoi(dbPort), dbName, dbUser, dbPassword, atoi(dbMaxConnections));
+    app().createDbClient("postgresql", dbHost, dbPort, dbName, dbUser, dbPassword, dbMaxConnections);
 
     app().registerHandler("/health-check",
                           [](const HttpRequestPtr &req,
