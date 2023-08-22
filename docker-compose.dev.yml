@@ -3,7 +3,7 @@ version: "3.7"
 services:
   postgres:
     image: postgres:15
-    container_name: backend-cockfighting-database
+    container_name: backend-cockfighting-dev-database
     restart: always
     environment: 
       - POSTGRES_PASSWORD=fight
