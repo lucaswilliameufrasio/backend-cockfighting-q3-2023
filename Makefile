@@ -36,3 +36,7 @@ stop-container:
 	$ docker stop backend-cockfighting-api
 PHONY: stop-container
 
+push-image:
+	$ docker push lucaswilliameufrasio/backend-cockfighting-api
+PHONY: push-image
+
