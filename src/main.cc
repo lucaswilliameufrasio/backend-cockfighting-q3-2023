@@ -213,8 +213,7 @@ int main()
                              }
                              catch (const exception &e)
                              {
-                                 auto errorMessage = "Failed to join stacks." + string(e.what());
-                                 logInfo(errorMessage);
+                                 logException(e.what());
 
                                  callback(makeFailedResponse());
                                  return;
@@ -250,7 +249,7 @@ int main()
                              }
                              catch (const drogon::orm::DrogonDbException &e)
                              {
-                                 logInfo("Failed to find the person with the given nickname" + string(e.base().what()));
+                                 logException(e.base().what());
 
                                  callback(makeFailedResponse());
                                  return;
@@ -293,7 +292,7 @@ int main()
                              }
                              catch (const drogon::orm::DrogonDbException &e)
                              {
-                                 logInfo("Failed to get the person id after creating it " + string(e.base().what()));
+                                 logException(e.base().what());
 
                                  callback(makeFailedResponse());
                                  return;
