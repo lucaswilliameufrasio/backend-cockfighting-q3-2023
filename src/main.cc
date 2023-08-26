@@ -139,24 +139,30 @@ int main()
                                  return;
                              }
 
-                             string nickname = jsonPtr->get("apelido", "").as<string>();
-                             string name = jsonPtr->get("nome", "").as<string>();
-                             string birthDate = jsonPtr->get("nascimento", "").as<string>();
+                             auto nickname = jsonPtr->get("apelido", "").as<string>();
+                             auto name = jsonPtr->get("nome", "").as<string>();
+                             auto birthDate = jsonPtr->get("nascimento", "").as<string>();
                              auto stacksJson = jsonPtr->get("stack", "");
 
-                             if (nickname == "")
+                             if (nickname.size() == 0)
                              {
                                  callback(makeUnprocessableContentResponseResponse("The 'apelido' parameter should not be empty"));
                                  return;
                              }
 
-                             if (birthDate == "")
+                             if (name.size() == 0)
+                             {
+                                 callback(makeUnprocessableContentResponseResponse("The 'nome' parameter should not be empty"));
+                                 return;
+                             }
+
+                             if (birthDate.size() == 0)
                              {
                                  callback(makeUnprocessableContentResponseResponse("The 'nascimento' parameter should not be empty"));
                                  return;
                              }
 
-                             if (stacksJson == "" || stacksJson.size() == 0)
+                             if (stacksJson.size() == 0)
                              {
                                  callback(makeUnprocessableContentResponseResponse("The 'stack' parameter should not be empty"));
                                  return;
