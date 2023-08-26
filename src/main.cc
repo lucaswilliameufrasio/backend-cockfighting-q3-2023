@@ -61,6 +61,10 @@ bool isLeap(int year)
 
 bool isDateValid(string date)
 {
+    if (date.size() != 10) {
+        return false;
+    }
+
     vector<int> partsOfDate;
 
     stringstream dateStream(date);
