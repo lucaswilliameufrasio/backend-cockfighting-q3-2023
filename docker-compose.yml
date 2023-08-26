@@ -22,8 +22,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: '0.5GB'
+          cpus: '0.15'
+          memory: '0.4GB'
 
   api2: # API - Instância 02
     image: lucaswilliameufrasio/backend-cockfighting-api
@@ -46,8 +46,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: '0.5GB'
+          cpus: '0.15'
+          memory: '0.4GB'
 
   nginx: # Load Balancer
     image: nginx:latest
@@ -65,7 +65,7 @@ services:
       resources:
         limits:
           cpus: '0.25'
-          memory: '0.5GB'
+          memory: '0.4GB'
 
   db:
     image: postgres:15
@@ -74,10 +74,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
-          memory: '1.5GB'
+          cpus: '1.05'
+          memory: '1.8GB'
     restart: always
-    environment: 
+    environment:
       - POSTGRES_PASSWORD=fight
       - POSTGRES_DB=fight
     volumes:
