@@ -71,6 +71,7 @@ services:
     image: postgres:15
     hostname: db
     container_name: backend-cockfighting-database
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     deploy:
       resources:
         limits:
@@ -83,7 +84,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/database/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./docker/database/postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+      - ./docker/database/postgresql.conf:/etc/postgresql/postgresql.conf
 
     ports:
       - 5459:5432
