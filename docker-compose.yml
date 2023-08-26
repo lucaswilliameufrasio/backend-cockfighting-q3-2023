@@ -12,7 +12,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=45
+      - DB_MAX_CONNECTIONS=75
     depends_on:
       - db
     expose:
@@ -36,7 +36,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=45
+      - DB_MAX_CONNECTIONS=75
     depends_on:
       - db
     expose:
