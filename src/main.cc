@@ -189,7 +189,7 @@ int main()
 
                                  for (int i = 0; i < int(stacksJson.size()); ++i)
                                  {
-                                     if (stacksJson[i].isString() == 0)
+                                     if (stacksJson[i].isNull() || stacksJson[i].isString() == 0)
                                      {
                                          invalidStack = 1;
                                          break;
@@ -213,7 +213,8 @@ int main()
                              }
                              catch (const exception &e)
                              {
-                                 logException(e.what());
+                                 auto errorMessage = "Failed to join stacks." + string(e.what());
+                                 logInfo(errorMessage);
 
                                  callback(makeFailedResponse());
                                  return;
@@ -249,7 +250,7 @@ int main()
                              }
                              catch (const drogon::orm::DrogonDbException &e)
                              {
-                                 logException(e.base().what());
+                                 logInfo("Failed to find the person with the given nickname" + string(e.base().what()));
 
                                  callback(makeFailedResponse());
                                  return;
