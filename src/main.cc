@@ -1,5 +1,9 @@
 #include <drogon/drogon.h>
 
+#include <boost/uuid/uuid.hpp>            // uuid class
+#include <boost/uuid/uuid_generators.hpp> // generators
+#include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
+
 using namespace std;
 using namespace drogon;
 
@@ -273,25 +277,14 @@ int main()
                                  return;
                              }
 
+                             const std::string uuid = boost::uuids::to_string(boost::uuids::random_generator()());
+
                              auto f = clientPtr->execSqlAsyncFuture("\
                                 INSERT INTO people (id, nickname, name, birth_date, stack) \
-                                VALUES (( \
-                                    SELECT \
-                                        uuid_in ( \
-                                          overlay( \
-                                            overlay( \
-                                              md5(random()::text || ':' || random()::text) placing '4' \
-                                              from \
-                                                13 \
-                                            ) placing to_hex(floor(random() * (11 -8 + 1) + 8)::int)::text \
-                                            from \
-                                              17 \
-                                          )::cstring \
-                                        )), $1, $2, $3, $4) \
+                                VALUES ($1, $2, $3, $4, $5) \
                                 ON CONFLICT DO NOTHING \
                                 RETURNING id; \
-                                ",
-                                                                    nickname, name, birthDate, stacks);
+                                ", uuid, nickname, name, birthDate, stacks);
 
                              string id = "";
 
