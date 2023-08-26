@@ -3,7 +3,7 @@
 using namespace std;
 using namespace drogon;
 
-HttpResponsePtr makeBadRequestResponseResponse(string message)
+HttpResponsePtr makeBadRequestResponse(string message)
 {
     Json::Value json;
     json["message"] = message;
@@ -367,12 +367,10 @@ int main()
                             function<void(const HttpResponsePtr &)> &&callback,
                             const string &search)
                          {
-                             auto clientPtr = drogon::app().getDbClient();
 
-                             if (search.size() == 0)
+                             if (search.empty())
                              {
-                                 logInfo(search);
-                                 callback(makeBadRequestResponseResponse("The query parameter 't' is required"));
+                                 callback(makeBadRequestResponse("The query parameter 't' is required"));
                                  return;
                              }
 
