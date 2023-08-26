@@ -138,8 +138,6 @@ int main()
                                  return;
                              }
 
-                             auto clientPtr = drogon::app().getDbClient();
-
                              string nickname = jsonPtr->get("apelido", "").as<string>();
                              string name = jsonPtr->get("nome", "").as<string>();
                              string birthDate = jsonPtr->get("nascimento", "").as<string>();
@@ -232,6 +230,8 @@ int main()
                                  return;
                              }
 
+                             auto clientPtr = drogon::app().getDbClient();
+
                              auto personFound = clientPtr->execSqlAsyncFuture("SELECT id FROM people WHERE people.nickname = $1;", nickname);
 
                              Json::Value json;
@@ -310,13 +310,13 @@ int main()
                             function<void(const HttpResponsePtr &)> &&callback,
                             const string &id)
                          {
-                             auto clientPtr = drogon::app().getDbClient();
-
                              if (id.size() != 36)
                              {
                                  callback(makeNotFoundResponseResponse("This person do not exist."));
                                  return;
                              }
+
+                             auto clientPtr = drogon::app().getDbClient();
 
                              auto f = clientPtr->execSqlAsyncFuture("SELECT people.id, people.nickname, people.name, people.birth_date, people.stack FROM people WHERE people.id = $1;", id);
 
@@ -373,6 +373,8 @@ int main()
                                  callback(makeBadRequestResponse("The query parameter 't' is required"));
                                  return;
                              }
+
+                             auto clientPtr = drogon::app().getDbClient();
 
                              auto f = clientPtr->execSqlAsyncFuture("SELECT people.id, people.nickname, people.name, people.birth_date, people.stack FROM people WHERE LOWER(people.name || ' ' || people.nickname || ' ' || people.stack) LIKE LOWER($1) LIMIT 50;", "%" + search + "%");
 
