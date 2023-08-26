@@ -5,18 +5,19 @@ on:
     branches: [ benchmark ]
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  # build:
+  #   runs-on: ubuntu-22.04
+    
 
-    steps:
-      - uses: actions/checkout@master
-      - name: Build
-        run: make build-app && make build-image
+  #   steps:
+  #     - uses: actions/checkout@master
+  #     - name: Build
+  #       run: make build-app && make build-image
 
   test:
     runs-on: ubuntu-22.04
 
-    needs: build
+    # needs: build
 
     permissions:
       contents: write
@@ -41,6 +42,8 @@ jobs:
     - run: docker-compose ps
 
     - run: docker-compose logs
+
+    - run: curl -v "http://localhost:9999/contagem-pessoas"
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
