@@ -71,6 +71,10 @@ bool isDateValid(string date)
         partsOfDate.push_back(stoi(split));
     }
 
+    if (partsOfDate.size() != 3) {
+        return false;
+    }
+
     auto day = partsOfDate.at(2);
     auto month = partsOfDate.at(1);
     auto year = partsOfDate.at(0);
