@@ -6,9 +6,9 @@ setup:
 	$ chmod +x ./scripts/build.sh
 PHONY: setup
 
-build:
+build-app:
 	$ ./scripts/build.sh
-PHONY: build
+PHONY: build-app
 
 run:
 	$ export $(cat .env | xargs) && ./build/backend-cockfighting-api
