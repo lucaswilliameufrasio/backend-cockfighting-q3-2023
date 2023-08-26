@@ -114,7 +114,8 @@ int main()
 
     app()
         .addListener("0.0.0.0", port)
-        .setThreadNum(0);
+        .setThreadNum(16)
+        .setIdleConnectionTimeout(10000);
 
     app().createDbClient("postgresql", dbHost, dbPort, dbName, dbUser, dbPassword, dbMaxConnections);
 
