@@ -293,7 +293,7 @@ int main()
                              }
                              catch (const drogon::orm::DrogonDbException &e)
                              {
-                                 logException(e.base().what());
+                                 logInfo("Failed to get the person id after creating it " + string(e.base().what()));
 
                                  callback(makeFailedResponse());
                                  return;
