@@ -68,7 +68,11 @@ bool isDateValid(string date)
     string split;
     while (getline(dateStream, split, '-'))
     {
-        partsOfDate.push_back(stoi(split));
+        try {
+            partsOfDate.push_back(stoi(split));
+        } catch(exception &e) {
+            break;
+        }
     }
 
     if (partsOfDate.size() != 3) {
