@@ -174,7 +174,7 @@ int main()
                                  return;
                              }
 
-                             if (!isDateValid(birthDate))
+                             if (birthDate.size() == 0 || !isDateValid(birthDate))
                              {
                                  callback(makeUnprocessableContentResponseResponse("The 'nascimento' parameter is not a valid date of format 'YYYY-MM-DD'"));
                                  return;
