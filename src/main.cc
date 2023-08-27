@@ -255,27 +255,27 @@ int main()
 
                              auto clientPtr = drogon::app().getDbClient();
 
-                             auto personFound = clientPtr->execSqlAsyncFuture("SELECT id FROM people WHERE people.nickname = $1;", nickname);
+                            //  auto personFound = clientPtr->execSqlAsyncFuture("SELECT id FROM people WHERE people.nickname = $1;", nickname);
 
-                             Json::Value json;
+                             Json::Value json = Json::objectValue;
 
-                             try
-                             {
-                                 auto result = personFound.get();
+                            //  try
+                            //  {
+                            //      auto result = personFound.get();
 
-                                 if (result.size() > 0)
-                                 {
-                                     callback(makeUnprocessableContentResponseResponse("This person already exists."));
-                                     return;
-                                 }
-                             }
-                             catch (const drogon::orm::DrogonDbException &e)
-                             {
-                                 logException(e.base().what());
+                            //      if (result.size() > 0)
+                            //      {
+                            //          callback(makeUnprocessableContentResponseResponse("This person already exists."));
+                            //          return;
+                            //      }
+                            //  }
+                            //  catch (const drogon::orm::DrogonDbException &e)
+                            //  {
+                            //      logException(e.base().what());
 
-                                 callback(makeFailedResponse());
-                                 return;
-                             }
+                            //      callback(makeFailedResponse());
+                            //      return;
+                            //  }
 
                              const std::string uuid = boost::uuids::to_string(boost::uuids::random_generator()());
 
@@ -294,7 +294,7 @@ int main()
 
                                  if (result.size() == 0)
                                  {
-                                     callback(makeFailedResponse());
+                                     callback(makeUnprocessableContentResponseResponse("This person already exists."));
                                      return;
                                  }
 
