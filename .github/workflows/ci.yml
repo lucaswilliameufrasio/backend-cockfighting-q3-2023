@@ -34,6 +34,7 @@ jobs:
         wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
         unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
         cd gatling-charts-highcharts-bundle-3.9.5
+        sleep 15
         ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "${{ github.sha }}" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
         echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
       env:
@@ -44,6 +45,8 @@ jobs:
     - run: docker-compose logs
 
     - run: curl -v "http://localhost:9999/contagem-pessoas"
+
+    - run: docker-compose down
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
