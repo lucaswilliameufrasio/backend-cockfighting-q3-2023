@@ -2,51 +2,52 @@ version: "3.7"
 
 services:
   api1: # API - Instância 01
-    image: lucaswilliameufrasio/backend-cockfighting-api
-    hostname: api1
-    restart: unless-stopped
+    # image: lucaswilliameufrasio/backend-cockfighting-api
+    # container paused, has to manually start from:
+    # docker-compose exec api1 sh
+    # then:
+    # /app/backend-cockfighting-api &
+    # trying to start directly makes it crash
+    build: .
+    command: sleep infinity
     environment:
-      - PORT=80
-      - DB_HOST=db
+      - PORT=8080
+      - DB_HOST=localhost
       - DB_PORT=5432
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=75
+      - NUM_THREADS=20
     depends_on:
       - db
-    expose:
-      - "80"
-    networks:
-      - fight-pit
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.15'
+          cpus: '0.25'
           memory: '0.4GB'
 
   api2: # API - Instância 02
-    image: lucaswilliameufrasio/backend-cockfighting-api
-    hostname: api2
-    restart: unless-stopped
+    # image: lucaswilliameufrasio/backend-cockfighting-api
+    build: .
+    command: sleep infinity
     environment:
-      - PORT=80
-      - DB_HOST=db
+      - PORT=8081
+      - DB_HOST=localhost
       - DB_PORT=5432
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=75
+      - NUM_THREADS=20
     depends_on:
       - db
-    expose:
-      - "80"
-    networks:
-      - fight-pit
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.15'
+          cpus: '0.25'
           memory: '0.4GB'
 
   nginx: # Load Balancer
@@ -57,14 +58,11 @@ services:
     depends_on:
       - api1
       - api2
-    ports:
-      - "9999:9999"
-    networks:
-      - fight-pit
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.15'
           memory: '0.4GB'
 
   db:
@@ -72,33 +70,20 @@ services:
     hostname: db
     container_name: backend-cockfighting-database
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
-    deploy:
-      resources:
-        limits:
-          cpus: '1.05'
-          memory: '1.8GB'
-    restart: always
     environment:
       - POSTGRES_PASSWORD=fight
       - POSTGRES_DB=fight
     volumes:
-      - postgres_data:/var/lib/postgresql/data
       - ./docker/database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/database/postgresql.conf:/etc/postgresql/postgresql.conf
-
-    ports:
-      - 5459:5432
-    networks:
-      - fight-pit
+    network_mode: host
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-networks:
-  fight-pit:
-    driver: bridge
-
-volumes:
-  postgres_data:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.85'
+          memory: '1.8GB'
