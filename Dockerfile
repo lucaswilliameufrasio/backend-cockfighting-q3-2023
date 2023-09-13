@@ -1,9 +1,14 @@
-FROM debian:12-slim
+FROM manjarolinux/base:latest
+
+RUN pacman -Syu --noconfirm
 
 SHELL [ "/bin/bash", "-c" ]
 
 ENV SHELL=/bin/bash
 
-COPY /build/backend-cockfighting-api .
+WORKDIR /app
 
-CMD /backend-cockfighting-api
+COPY /build/backend-cockfighting-api .
+RUN chmod +x /app/backend-cockfighting-api
+
+CMD /app/backend-cockfighting-api
