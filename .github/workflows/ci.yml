@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - run: docker-compose up -d
+    - run: docker compose up -d
 
     - name: Load test
       run: |
@@ -40,13 +40,13 @@ jobs:
       env:
         WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
 
-    - run: docker-compose ps
+    - run: docker compose ps
 
-    - run: docker-compose logs
+    - run: docker compose logs
 
     - run: curl -v "http://localhost:9999/contagem-pessoas"
 
-    - run: docker-compose down
+    - run: docker compose down -v
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v4
