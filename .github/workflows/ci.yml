@@ -2,7 +2,7 @@ name: main
 
 on:
   push:
-    branches: [ benchmark ]
+    branches: [ benchmark, feature/to_the_infinity_and_beyond ]
 
 jobs:
   # build:
@@ -15,7 +15,7 @@ jobs:
   #       run: make build-app && make build-image
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04-arm
 
     # needs: build
 
@@ -23,7 +23,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
 
     - run: docker-compose up -d
 
@@ -49,7 +49,7 @@ jobs:
     - run: docker-compose down
 
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}
