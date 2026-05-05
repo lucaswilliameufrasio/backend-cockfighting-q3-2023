@@ -27,18 +27,20 @@ jobs:
 
     - run: docker compose up -d
 
-    - name: Load test
-      run: |
-        git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2023-q3
-        cd rinha-de-backend-2023-q3
-        wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
-        unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
-        cd gatling-charts-highcharts-bundle-3.9.5
-        sleep 15
-        ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "${{ github.sha }}" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
-        echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
-      env:
-        WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
+    - run: curl -v "http://localhost:9999/contagem-pessoas"
+
+    # - name: Load test
+    #   run: |
+    #     git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2023-q3
+    #     cd rinha-de-backend-2023-q3
+    #     wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
+    #     unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
+    #     cd gatling-charts-highcharts-bundle-3.9.5
+    #     sleep 15
+    #     ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "${{ github.sha }}" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
+    #     echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
+    #   env:
+    #     WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
 
     - run: docker compose ps
 
