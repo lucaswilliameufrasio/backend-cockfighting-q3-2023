@@ -11,20 +11,24 @@ RUN pip install conan --break-system-packages
 
 WORKDIR /build_src
 COPY conanfile.txt .
-RUN conan profile detect --force
-RUN mkdir -p build && cd build && \
+
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    conan profile detect --force && \
+    mkdir -p build && cd build && \
     conan install .. --output-folder=. --build=missing
 
 COPY . .
-RUN cd build && \
+
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    cd build && \
     cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && \
     cmake --build . --parallel $(nproc)
 
 # RUNTIME STAGE
-FROM debian:trixie-slim
+FROM debian:trixie-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
+    ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
