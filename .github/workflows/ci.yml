@@ -21,11 +21,14 @@ jobs:
         for i in $(seq 1 30); do
           if curl -s -o /dev/null -w "%{http_code}" "http://localhost:9999/health-check" | grep -q 200; then
             echo "API is ready!"
-            break
+            exit 0
           fi
           echo "Waiting for API... attempt $i"
           sleep 2
         done
+        echo "API never became ready"
+        docker compose logs --tail 20 api1 api2 nginx db
+        exit 1
 
     - name: Load test
       run: |
