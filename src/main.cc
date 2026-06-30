@@ -31,7 +31,7 @@ int main() {
                          (size_t)tuner.dbConnections,
                          "",       // Connect string (empty when using params)
                          "default",// Client name
-                         true,     // isFast
+                          false,    // isFast
                          "",       // characterSet
                          0.0,      // timeout
                          false);   // autoBatch
