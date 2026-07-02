@@ -13,7 +13,19 @@ COPY conanfile.txt .
 
 RUN conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing
+    conan download util-linux-libuuid/2.39.2 -r conancenter 2>/dev/null; \
+    find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; -exec sed -i 's|https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|https://kernel.googlesource.com/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|g' {} \; && \
+    conan install .. --output-folder=. --build=missing 2>&1 || \
+    (echo "Retrying with web.archive.org mirror..." && \
+     find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; -exec sed -i 's|https://kernel.googlesource.com/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|https://web.archive.org/web/20230101000000if_/https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|g' {} \; && \
+     rm -rf /root/.conan2/p/*util-linux* /root/.conan2/p/b/*util* 2>/dev/null && \
+     conan install .. --output-folder=. --build=missing 2>&1) || \
+    (echo "Both mirrors failed. Removing util-linux-libuuid dependency..." && \
+     rm -rf /root/.conan2/p/*util-linux* /root/.conan2/p/b/*util* /root/.conan2/p/*libuuid* 2>/dev/null && \
+     conan install .. --output-folder=. --build=missing 2>&1) || \
+    (echo "Final attempt with system uuid-dev..." && \
+     apt-get install -y uuid-dev && \
+     conan install .. --output-folder=. --build=missing 2>&1)
 
 COPY . .
 
