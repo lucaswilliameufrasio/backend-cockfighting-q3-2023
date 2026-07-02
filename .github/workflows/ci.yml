@@ -6,13 +6,14 @@ on:
 
 jobs:
   benchmark:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+    # actions/checkout v7.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
     - run: docker compose up -d
 
@@ -50,8 +51,10 @@ jobs:
 
     - run: docker compose down -v
 
+    # peaceiris/actions-gh-pages v4.1.0
+    # https://github.com/peaceiris/actions-gh-pages/releases/tag/v4.1.0
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v4
+      uses: peaceiris/actions-gh-pages@1ef5a1b1df4c63fe21a2242edbee6cac921ece01
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}
