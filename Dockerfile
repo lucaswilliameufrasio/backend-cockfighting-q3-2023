@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
+RUN conan profile detect --force
 
 # Copy and export a local util-linux-libuuid that wraps system libuuid
 COPY docker/builder/uuid-conanfile.py /tmp/uuid-pkg/conanfile.py
