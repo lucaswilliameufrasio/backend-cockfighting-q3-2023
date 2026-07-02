@@ -9,26 +9,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
 
+# Create and export a local util-linux-libuuid that wraps system libuuid
+RUN mkdir -p /tmp/uuid-pkg && cd /tmp/uuid-pkg && \
+cat > conanfile.py << 'CONANEOF'
+from conan import ConanFile
+class SysLibUuid(ConanFile):
+    name = "util-linux-libuuid"
+    version = "2.39.2"
+    package_type = "static-library"
+    settings = "os", "arch", "compiler", "build_type"
+    def requirements(self):
+        pass
+    def package_info(self):
+        self.cpp_info.libs = ["uuid"]
+        self.cpp_info.includedirs = []
+        self.cpp_info.libdirs = []
+CONANEOF
+conan create . 2>&1 || conan export . 2>&1
+
 WORKDIR /build_src
 COPY conanfile.txt .
 
-# Download recipe, patch URL, then install
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing 2>&1 || true; \
-    CONANDATA=$(find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; 2>/dev/null | head -1); \
-    if [ -n "$CONANDATA" ]; then \
-        echo "Found conandata.yml at $CONANDATA, patching URL and SHA256..."; \
-        sed -i 's|https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' "$CONANDATA"; \
-        sed -i 's|87abdfaa8e490f8be6dde976f7c80b9b5ff9f301e1b67e3899e1f05a59a1531f|7a46eed743a84cc10108291237e06d8a524cbc8c07f60047667b84b95b01e267|g' "$CONANDATA"; \
-        rm -rf /root/.conan2/p/*util-linux* /root/.conan2/p/b/*util* 2>/dev/null; \
-        conan install .. --output-folder=. --build=missing; \
-    else \
-        echo "Trying with system uuid-dev..."; \
-        conan install .. --output-folder=. --build=missing -c "tools.system.package_manager:mode=install" -c "tools.system.package_manager:tool=apt-get" 2>&1 || \
-        echo "ERROR: util-linux source download still failing. Manual intervention needed."; \
-    fi
+    conan install .. --output-folder=. --build=missing 2>&1 || \
+    conan install .. --output-folder=. --build="util-linux-libuuid/*:never" 2>&1
 
 COPY . .
 
