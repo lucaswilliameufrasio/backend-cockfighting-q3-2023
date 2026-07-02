@@ -12,25 +12,22 @@ RUN pip install conan --break-system-packages
 WORKDIR /build_src
 COPY conanfile.txt .
 
+# Download recipe, patch URL, then install
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing 2>&1 | tee /tmp/conan.log; \
-    if grep -q "Error in source" /tmp/conan.log 2>/dev/null; then \
-        echo "Patching conandata.yml for util-linux..."; \
-        CONANDATA=$(find /root/.conan2 -name "conandata.yml" -path "*util-linux*" 2>/dev/null | head -1); \
-        if [ -n "$CONANDATA" ]; then \
-            sed -i 's|mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2\.39/util-linux-2\.39\.2\.tar\.xz|github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' "$CONANDATA"; \
-            echo "Patched $CONANDATA"; \
-            conan install .. --output-folder=. --build=missing; \
-        else \
-            echo "Could not find conandata.yml, trying direct download..."; \
-            wget -q -O /root/.conan2/cache/util-linux-2.39.2.tar.gz \
-                "https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz" 2>&1 && \
-            conan install .. --output-folder=. --build=missing || \
-            echo "Still failing, trying with --build=never for util-linux..."; \
-            conan install .. --output-folder=. --build=missing --build-policy="util-linux-libuuid/2.39.2:never" 2>&1 || true; \
-        fi; \
+    conan install .. --output-folder=. --build=missing 2>&1 || true; \
+    CONANDATA=$(find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; 2>/dev/null | head -1); \
+    if [ -n "$CONANDATA" ]; then \
+        echo "Found conandata.yml at $CONANDATA, patching URL and SHA256..."; \
+        sed -i 's|https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.2.tar.xz|https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' "$CONANDATA"; \
+        sed -i 's|87abdfaa8e490f8be6dde976f7c80b9b5ff9f301e1b67e3899e1f05a59a1531f|7a46eed743a84cc10108291237e06d8a524cbc8c07f60047667b84b95b01e267|g' "$CONANDATA"; \
+        rm -rf /root/.conan2/p/*util-linux* /root/.conan2/p/b/*util* 2>/dev/null; \
+        conan install .. --output-folder=. --build=missing; \
+    else \
+        echo "Trying with system uuid-dev..."; \
+        conan install .. --output-folder=. --build=missing -c "tools.system.package_manager:mode=install" -c "tools.system.package_manager:tool=apt-get" 2>&1 || \
+        echo "ERROR: util-linux source download still failing. Manual intervention needed."; \
     fi
 
 COPY . .
