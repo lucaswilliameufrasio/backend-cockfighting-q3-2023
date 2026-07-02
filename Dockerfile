@@ -10,22 +10,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install conan --break-system-packages
 
 # Create and export a local util-linux-libuuid that wraps system libuuid
-RUN mkdir -p /tmp/uuid-pkg && cd /tmp/uuid-pkg && \
-cat > conanfile.py << 'CONANEOF'
+RUN mkdir -p /tmp/uuid-pkg && python3 -c "
+open('/tmp/uuid-pkg/conanfile.py', 'w').write('''
 from conan import ConanFile
 class SysLibUuid(ConanFile):
-    name = "util-linux-libuuid"
-    version = "2.39.2"
-    package_type = "static-library"
-    settings = "os", "arch", "compiler", "build_type"
-    def requirements(self):
-        pass
+    name = \"util-linux-libuuid\"
+    version = \"2.39.2\"
+    package_type = \"static-library\"
+    settings = \"os\", \"arch\", \"compiler\", \"build_type\"
+    def requirements(self): pass
     def package_info(self):
-        self.cpp_info.libs = ["uuid"]
+        self.cpp_info.libs = [\"uuid\"]
         self.cpp_info.includedirs = []
         self.cpp_info.libdirs = []
-CONANEOF
-conan create . 2>&1 || conan export . 2>&1
+''')
+" && cd /tmp/uuid-pkg && conan create . 2>&1 || conan export . 2>&1
 
 WORKDIR /build_src
 COPY conanfile.txt .
