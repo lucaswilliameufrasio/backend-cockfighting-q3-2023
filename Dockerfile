@@ -12,15 +12,20 @@ RUN conan profile detect --force
 
 # Copy and export a local util-linux-libuuid that wraps system libuuid
 COPY docker/builder/uuid-conanfile.py /tmp/uuid-pkg/conanfile.py
-RUN cd /tmp/uuid-pkg && conan create . 2>&1 || conan export . 2>&1
+RUN cd /tmp/uuid-pkg && conan create . 2>&1
+
+# Disable ConanCenter remote so local packages take precedence
+RUN conan remote disable conancenter 2>/dev/null || true
 
 WORKDIR /build_src
 COPY conanfile.txt .
 
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
-    conan profile detect --force && \
     mkdir -p build && cd build && \
     conan install .. --output-folder=. --build=missing
+
+# Re-enable ConanCenter for the rest of the build
+RUN conan remote enable conancenter 2>/dev/null || true
 
 COPY . .
 
