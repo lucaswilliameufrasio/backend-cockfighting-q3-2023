@@ -9,22 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
 
-# Create and export a local util-linux-libuuid that wraps system libuuid
-RUN mkdir -p /tmp/uuid-pkg && python3 -c "
-open('/tmp/uuid-pkg/conanfile.py', 'w').write('''
-from conan import ConanFile
-class SysLibUuid(ConanFile):
-    name = \"util-linux-libuuid\"
-    version = \"2.39.2\"
-    package_type = \"static-library\"
-    settings = \"os\", \"arch\", \"compiler\", \"build_type\"
-    def requirements(self): pass
-    def package_info(self):
-        self.cpp_info.libs = [\"uuid\"]
-        self.cpp_info.includedirs = []
-        self.cpp_info.libdirs = []
-''')
-" && cd /tmp/uuid-pkg && conan create . 2>&1 || conan export . 2>&1
+# Copy and export a local util-linux-libuuid that wraps system libuuid
+COPY docker/builder/uuid-conanfile.py /tmp/uuid-pkg/conanfile.py
+RUN cd /tmp/uuid-pkg && conan create . 2>&1 || conan export . 2>&1
 
 WORKDIR /build_src
 COPY conanfile.txt .
@@ -32,8 +19,7 @@ COPY conanfile.txt .
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing 2>&1 || \
-    conan install .. --output-folder=. --build="util-linux-libuuid/*:never" 2>&1
+    conan install .. --output-folder=. --build=missing
 
 COPY . .
 
