@@ -8,14 +8,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
-RUN conan profile detect --force
+
+# All subsequent Conan operations use the same cache mount
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    conan profile detect --force
 
 # Copy and export a local util-linux-libuuid that wraps system libuuid
 COPY docker/builder/uuid-conanfile.py /tmp/uuid-pkg/conanfile.py
-RUN cd /tmp/uuid-pkg && conan create . 2>&1
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    cd /tmp/uuid-pkg && conan create . 2>&1
 
 # Disable ConanCenter remote so local packages take precedence
-RUN conan remote disable conancenter 2>/dev/null || true
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    conan remote disable conancenter 2>/dev/null || true
 
 WORKDIR /build_src
 COPY conanfile.txt .
@@ -25,7 +30,8 @@ RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan install .. --output-folder=. --build=missing
 
 # Re-enable ConanCenter for the rest of the build
-RUN conan remote enable conancenter 2>/dev/null || true
+RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
+    conan remote enable conancenter 2>/dev/null || true
 
 COPY . .
 
