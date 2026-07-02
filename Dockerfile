@@ -3,7 +3,7 @@ FROM debian:trixie-20260623-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     make git gcc g++ build-essential cmake wget python3 python3-pip \
-    ca-certificates libuuid-dev \
+    ca-certificates uuid-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Conan 2.x
