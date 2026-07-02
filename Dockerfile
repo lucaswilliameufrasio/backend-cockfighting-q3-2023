@@ -9,17 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
 
-# Pre-download util-linux source (kernel.org mirror returns 404)
-RUN wget -q -O /tmp/util-linux-2.39.2.tar.xz \
-    "https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz" || true
-
 WORKDIR /build_src
 COPY conanfile.txt .
 
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing
+    conan install .. --output-folder=. --build=missing 2>&1 || \
+    (echo "First attempt failed, patching util-linux URL..." && \
+     find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; -exec sed -i 's|mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2\.39/util-linux-2\.39\.2\.tar\.xz|github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' {} \; && \
+     conan install .. --output-folder=. --build=missing)
 
 COPY . .
 
