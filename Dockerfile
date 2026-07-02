@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Conan 2.x
 RUN pip install conan --break-system-packages
 
+# Pre-download util-linux source (kernel.org mirror returns 404)
+RUN wget -q -O /tmp/util-linux-2.39.2.tar.xz \
+    "https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz" || true
+
 WORKDIR /build_src
 COPY conanfile.txt .
 
