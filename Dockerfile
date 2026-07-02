@@ -15,10 +15,23 @@ COPY conanfile.txt .
 RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     conan profile detect --force && \
     mkdir -p build && cd build && \
-    conan install .. --output-folder=. --build=missing 2>&1 || \
-    (echo "First attempt failed, patching util-linux URL..." && \
-     find /root/.conan2 -name "conandata.yml" -exec grep -l "util-linux" {} \; -exec sed -i 's|mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2\.39/util-linux-2\.39\.2\.tar\.xz|github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' {} \; && \
-     conan install .. --output-folder=. --build=missing)
+    conan install .. --output-folder=. --build=missing 2>&1 | tee /tmp/conan.log; \
+    if grep -q "Error in source" /tmp/conan.log 2>/dev/null; then \
+        echo "Patching conandata.yml for util-linux..."; \
+        CONANDATA=$(find /root/.conan2 -name "conandata.yml" -path "*util-linux*" 2>/dev/null | head -1); \
+        if [ -n "$CONANDATA" ]; then \
+            sed -i 's|mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2\.39/util-linux-2\.39\.2\.tar\.xz|github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz|g' "$CONANDATA"; \
+            echo "Patched $CONANDATA"; \
+            conan install .. --output-folder=. --build=missing; \
+        else \
+            echo "Could not find conandata.yml, trying direct download..."; \
+            wget -q -O /root/.conan2/cache/util-linux-2.39.2.tar.gz \
+                "https://github.com/util-linux/util-linux/archive/refs/tags/v2.39.2.tar.gz" 2>&1 && \
+            conan install .. --output-folder=. --build=missing || \
+            echo "Still failing, trying with --build=never for util-linux..."; \
+            conan install .. --output-folder=. --build=missing --build-policy="util-linux-libuuid/2.39.2:never" 2>&1 || true; \
+        fi; \
+    fi
 
 COPY . .
 
