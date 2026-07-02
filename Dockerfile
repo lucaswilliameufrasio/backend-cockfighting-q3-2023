@@ -1,9 +1,9 @@
 # BUILD STAGE
-FROM debian:trixie-slim AS builder
+FROM debian:trixie-20260623-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     make git gcc g++ build-essential cmake wget python3 python3-pip \
-    ca-certificates \
+    ca-certificates libuuid-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Conan 2.x
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.conan2,sharing=locked \
     cmake --build . --parallel $(nproc)
 
 # RUNTIME STAGE
-FROM debian:trixie-slim AS runtime
+FROM debian:trixie-20260623-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl \
