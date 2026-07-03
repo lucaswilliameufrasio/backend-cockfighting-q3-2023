@@ -75,7 +75,7 @@ struct PersonRepository {
             // Optimization: Query the pre-calculated 'searchable' column instead of concatenating on the fly
             auto result = co_await clientPtr->execSqlCoro(
                 "SELECT id, nickname, name, birth_date, stack FROM people "
-                "WHERE nickname ILIKE $1 OR name ILIKE $1 OR array_to_string(stack, ',') ILIKE $1 "
+                "WHERE searchable LIKE $1 "
                 "LIMIT 50;",
                 "%" + term + "%");
 
