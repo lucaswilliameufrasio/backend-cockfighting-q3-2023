@@ -42,7 +42,7 @@ struct TuningProfile {
         if ((cpu_quota > 0.0 && cpu_quota <= 1.1) || total_ram_gb < 2) {
             p.tier = HardwareTier::Constrained;
             p.threadNum = manualThreads; 
-            p.dbConnections = 25; // 25 per API = 50 total. Very safe for 200 limit.
+            p.dbConnections = manualDbConnections; // Let compose control this
             p.enableInMemCache = false;
         } else if (cores <= 8) {
             p.tier = HardwareTier::Performance;
