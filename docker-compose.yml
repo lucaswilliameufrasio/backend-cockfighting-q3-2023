@@ -10,7 +10,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=8
-      - NUM_THREADS=1
+      - NUM_THREADS=2
     depends_on:
       db:
         condition: service_healthy
@@ -39,7 +39,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=8
-      - NUM_THREADS=1
+      - NUM_THREADS=2
     depends_on:
       db:
         condition: service_healthy
