@@ -9,7 +9,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=12
+      - DB_MAX_CONNECTIONS=16
       - NUM_THREADS=2
     depends_on:
       db:
@@ -38,7 +38,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=12
+      - DB_MAX_CONNECTIONS=16
       - NUM_THREADS=2
     depends_on:
       db:
