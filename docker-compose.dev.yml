@@ -1,15 +1,13 @@
-version: "3.7"
-
 services:
   postgres:
-    image: postgres:15
+    image: postgres:18-alpine
     container_name: backend-cockfighting-dev-database
     restart: always
     environment: 
       - POSTGRES_PASSWORD=fight
       - POSTGRES_DB=fight
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - ./docker/database/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5458:5432

@@ -5,27 +5,31 @@ on:
     branches: [ benchmark ]
 
 jobs:
-  # build:
-  #   runs-on: ubuntu-22.04
-    
-
-  #   steps:
-  #     - uses: actions/checkout@master
-  #     - name: Build
-  #       run: make build-app && make build-image
-
-  test:
-    runs-on: ubuntu-22.04
-
-    # needs: build
+  benchmark:
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    # actions/checkout v7.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
-    - run: docker-compose up -d
+    - run: docker compose up -d
+
+    - name: Wait for API to be ready
+      run: |
+        for i in $(seq 1 30); do
+          if curl -s -o /dev/null -w "%{http_code}" "http://localhost:9999/health-check" | grep -q 200; then
+            echo "API is ready!"
+            exit 0
+          fi
+          echo "Waiting for API... attempt $i"
+          sleep 2
+        done
+        echo "API never became ready"
+        docker compose logs --tail 20 api1 api2 nginx db
+        exit 1
 
     - name: Load test
       run: |
@@ -34,22 +38,23 @@ jobs:
         wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
         unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
         cd gatling-charts-highcharts-bundle-3.9.5
-        sleep 15
         ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "${{ github.sha }}" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
         echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
       env:
         WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
 
-    - run: docker-compose ps
+    - run: docker compose ps
 
-    - run: docker-compose logs
+    - run: docker compose logs
 
     - run: curl -v "http://localhost:9999/contagem-pessoas"
 
-    - run: docker-compose down
+    - run: docker compose down -v
 
+    # peaceiris/actions-gh-pages v4.1.0
+    # https://github.com/peaceiris/actions-gh-pages/releases/tag/v4.1.0
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@1ef5a1b1df4c63fe21a2242edbee6cac921ece01
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}

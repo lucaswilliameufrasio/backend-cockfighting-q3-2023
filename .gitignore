@@ -41,3 +41,5 @@ CMakeCache.txt
 CMakeFiles
 .cmake
 venv
+
+.DS_Store

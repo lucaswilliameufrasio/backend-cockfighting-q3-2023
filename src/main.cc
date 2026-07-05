@@ -1,47 +1,62 @@
 #include <drogon/drogon.h>
+#include "config/app_config.h"
+#include "config/resource_tuner.h"
+#include "transport/http/person_handler.h"
 
-#include <boost/uuid/uuid.hpp>            // uuid class
-#include <boost/uuid/uuid_generators.hpp> // generators
-#include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
-
-#include "responses.cc"
-#include "utils.cc"
-#include "handlers/get-health-check.cc"
-#include "handlers/post-pessoas.cc"
-#include "handlers/get-pessoas-by-id.cc"
-#include "handlers/get-pessoas-by-term.cc"
-#include "handlers/get-contagem-pessoas.cc"
-
-using namespace std;
 using namespace drogon;
+using namespace transport::http;
 
-int main()
-{
-    const auto port(atoi(getenv("PORT")));
-    const auto dbMaxConnections(atol(getenv("DB_MAX_CONNECTIONS")));
-    const auto numThreads(atoi(getenv("NUM_THREADS")));
-
-    const char *dbHost = getenv("DB_HOST");
-    const auto dbPort(atoi(getenv("DB_PORT")));
-    const char *dbName = getenv("DB_NAME");
-    const char *dbUser = getenv("DB_USER");
-    const char *dbPassword = getenv("DB_PASSWORD");
-
-    logInfo("Starting backend-cockfighting-api server on http://localhost:" + to_string(port));
+int main() {
+    auto config = config::AppConfig::load();
+    auto tuner = config::TuningProfile::detect(config.numThreads, config.dbMaxConnections);
+    
+    PersonHandler::setTuner(tuner);
+    application::PersonService::initCache(tuner.enableInMemCache);
 
     app()
-        .addListener("0.0.0.0", port)
-        .setThreadNum(numThreads)
-        .setIdleConnectionTimeout(10000);
+        .addListener("0.0.0.0", config.port)
+        .setThreadNum(tuner.threadNum)
+        .setIdleConnectionTimeout(10000)
+        .setServerHeaderField("")
+        .setLogLevel(trantor::Logger::kFatal);
 
-    app().createDbClient("postgresql", dbHost, dbPort, dbName, dbUser, dbPassword, dbMaxConnections);
+    // Using the explicit 13-parameter signature for Drogon 1.9.12
+    // This is the most stable way to ensure parameters are passed correctly to libpq
+    app().createDbClient("postgresql", 
+                         config.dbHost, 
+                         (unsigned short)config.dbPort, 
+                         config.dbName, 
+                         config.dbUser, 
+                         config.dbPassword, 
+                         (size_t)tuner.dbConnections,
+                         "",       // Connect string (empty when using params)
+                         "default",// Client name
+                          false,    // isFast
+                         "",       // characterSet
+                         0.0,      // timeout
+                         false);   // autoBatch
 
-    app().registerHandler("/health-check", getHealthCheck())
-        .registerHandler("/pessoas", postPessoas(), {Post})
-        .registerHandler("/pessoas/{id}", getPessoasById(), {Get})
-        .registerHandler("/pessoas?t={search}", getPessoasByTerm(), {Get})
-        .registerHandler("/contagem-pessoas", getContagemPessoas(), {Get})
-        .run();
+    app().registerHandler("/health-check", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
+        return PersonHandler::handleHealthCheck(req);
+    });
+
+    app().registerHandler("/pessoas", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
+        return PersonHandler::handlePost(req);
+    }, {Post});
+
+    app().registerHandler("/pessoas/{id}", [](HttpRequestPtr req, std::string id) -> Task<HttpResponsePtr> {
+        return PersonHandler::handleGetById(req, id);
+    }, {Get});
+
+    app().registerHandler("/pessoas", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
+        return PersonHandler::handleSearch(req);
+    }, {Get});
+
+    app().registerHandler("/contagem-pessoas", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
+        return PersonHandler::handleCount(req);
+    }, {Get});
+
+    app().run();
 
     return 0;
 }
