@@ -17,7 +17,7 @@ struct PersonHandler {
     static drogon::Task<drogon::HttpResponsePtr> handlePost(drogon::HttpRequestPtr req) {
         auto body = req->getBody();
         if (body.empty()) {
-            co_return makeResponse(drogon::k500InternalServerError, "Error");
+            co_return makeResponse(drogon::k400BadRequest, "Empty");
         }
 
         domain::Person p;
@@ -28,27 +28,36 @@ struct PersonHandler {
             p.name = std::string(doc["nome"].get_string().value());
             p.birth_date = std::string(doc["nascimento"].get_string().value());
 
-            if (p.nickname.empty() || p.name.empty() || !config::isDateValid(p.birth_date)) {
-                co_return makeResponse(drogon::k422UnprocessableEntity, "Invalid");
-            }
-            if (p.nickname.size() > 32 || p.name.size() > 100) {
-                co_return makeResponse(drogon::k422UnprocessableEntity, "Too long");
-            }
-
             auto stack_field = doc["stack"];
-            if (stack_field.type() == simdjson::ondemand::json_type::array) {
+            auto array_res = stack_field.get_array();
+            if (!array_res.error()) {
+                auto array = array_res.value();
                 std::vector<std::string> stacks;
-                for (auto s : stack_field.get_array()) {
-                    std::string_view sv = s.get_string().value();
-                    if (sv.size() > 32) {
-                        co_return makeResponse(drogon::k422UnprocessableEntity, "Too long");
+                for (auto elem : array) {
+                    auto sv = elem.get_string();
+                    if (sv.error()) {
+                        co_return makeResponse(drogon::k400BadRequest, "Stack type");
                     }
-                    stacks.emplace_back(sv);
+                    stacks.emplace_back(std::string(sv.value()));
                 }
                 p.stack = std::move(stacks);
             }
         } catch (...) {
-            co_return makeResponse(drogon::k422UnprocessableEntity, "JSON Error");
+            co_return makeResponse(drogon::k400BadRequest, "Invalid JSON");
+        }
+
+        if (p.nickname.empty() || p.name.empty() || !config::isDateValid(p.birth_date)) {
+            co_return makeResponse(drogon::k422UnprocessableEntity, "Invalid");
+        }
+        if (p.nickname.size() > 32 || p.name.size() > 100) {
+            co_return makeResponse(drogon::k422UnprocessableEntity, "Too long");
+        }
+        if (p.stack.has_value()) {
+            for (const auto &s : *p.stack) {
+                if (s.size() > 32) {
+                    co_return makeResponse(drogon::k422UnprocessableEntity, "Too long");
+                }
+            }
         }
 
         auto id = co_await application::PersonService::createPerson(p);
@@ -78,7 +87,7 @@ struct PersonHandler {
         res["apelido"] = person->nickname;
         res["nome"] = person->name;
         res["nascimento"] = person->birth_date;
-        if (person->stack) {
+        if (person->stack && !person->stack->empty()) {
             res["stack"] = Json::arrayValue;
             for (const auto &s : *person->stack) {
                 res["stack"].append(s);
@@ -103,7 +112,7 @@ struct PersonHandler {
             pj["apelido"] = p.nickname;
             pj["nome"] = p.name;
             pj["nascimento"] = p.birth_date;
-            if (p.stack) {
+            if (p.stack && !p.stack->empty()) {
                 pj["stack"] = Json::arrayValue;
                 for (const auto &s : *p.stack) {
                     pj["stack"].append(s);
@@ -118,9 +127,9 @@ struct PersonHandler {
 
     static drogon::Task<drogon::HttpResponsePtr> handleCount(drogon::HttpRequestPtr req) {
         size_t c = co_await application::PersonService::getPersonCount();
-        Json::Value res;
-        res["count"] = (unsigned int)c;
-        co_return drogon::HttpResponse::newHttpJsonResponse(res);
+        auto resp = drogon::HttpResponse::newHttpResponse();
+        resp->setBody(std::to_string(c));
+        co_return resp;
     }
 
     static drogon::Task<drogon::HttpResponsePtr> handleHealthCheck(drogon::HttpRequestPtr req) {

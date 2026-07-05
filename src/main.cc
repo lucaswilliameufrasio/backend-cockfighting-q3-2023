@@ -48,7 +48,7 @@ int main() {
         return PersonHandler::handleGetById(req, id);
     }, {Get});
 
-    app().registerHandler("/pessoas?t={search}", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
+    app().registerHandler("/pessoas", [](HttpRequestPtr req) -> Task<HttpResponsePtr> {
         return PersonHandler::handleSearch(req);
     }, {Get});
 
