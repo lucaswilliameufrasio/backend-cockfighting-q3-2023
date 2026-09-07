@@ -40,3 +40,21 @@ if(UUID_LIBRARIES)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${UUID_LIBRARIES})
     target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIRS})
 endif()
+
+# --- Testes unitários (GoogleTest via Conan [test_requires]) ---
+find_package(GTest CONFIG REQUIRED)
+enable_testing()
+add_executable(unit-tests src/tests/unit_tests.cc)
+target_link_libraries(unit-tests PRIVATE
+    GTest::gtest_main
+    Drogon::Drogon
+    ZLIB::ZLIB
+    mimalloc-static
+    simdjson::simdjson
+)
+if(UUID_LIBRARIES)
+    target_link_libraries(unit-tests PRIVATE ${UUID_LIBRARIES})
+    target_include_directories(unit-tests PRIVATE ${UUID_INCLUDE_DIRS})
+endif()
+include(GoogleTest)
+gtest_discover_tests(unit-tests)

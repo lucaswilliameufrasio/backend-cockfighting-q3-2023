@@ -4,6 +4,9 @@ drogon/1.9.13
 mimalloc/2.2.4
 simdjson/4.2.4
 
+[test_requires]
+gtest/1.18.0
+
 [generators]
 CMakeDeps
 CMakeToolchain
