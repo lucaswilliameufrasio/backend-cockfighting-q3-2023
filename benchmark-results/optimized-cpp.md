@@ -2,7 +2,34 @@
 
 Branch: `feature/upgrade-benchmark` (base: `feature/to_the_infinity_and_beyond`) · `main` intocada
 
-## Antes → Depois
+## Rodada 2 (nginx L4 + GIN fastupdate=off) — números reais (request-level)
+
+Substitui a rodada 1 nas métricas de GET/SEARCH (na rodada 1, p95/p99 de
+sub-milissegundo eram reportados como `iteration_duration` por limitação
+do extrator; agora extrai-se a linha `http_req_duration` direto do k6).
+
+Stack: nginx **L4 `stream`** (repassa TCP puro, igual Go/Rust) + índice GIN
+**`fastupdate=off`** + pool 16 + NUM_THREADS=2. Fresh DB, ursoc, k6 nativo.
+
+| Cenário | Rodada 1 (L7) p95 → p99 | Rodada 2 (L4) p95 → p99 | RPS 1 → 2 |
+|---|---|---|---|
+| smoke | 3.98ms → 4.53ms | 4.33ms → 5.58ms | 474 → 471 |
+| post-heavy | 139.11ms → 247.37ms | 146.95ms → 233.64ms | 2621 → 1919¹ |
+| search-heavy | 41.69ms → 49.09ms | **1.31ms → 2.07ms** | 3282 → **3807** |
+| get-by-id-heavy | ~37ms → ~38ms² | **0.98ms → 1.33ms** | 3936 → **4727** (teto k6) |
+| mixed-rinha-like | 848.72ms → 1.94s | 550-750ms → 2-3.9s³ | 709 → 640-677 |
+
+¹ fastupdate=off torna cada INSERT mais caro (atualiza GIN direto, sem pending list) — p95 do post praticamente igual, rps -25%
+² rodada 1 reportava `iteration_duration` (inclui sleep de 20ms do script); request real era sub-ms
+³ variância alta por estado do DB (post-heavy anterior + autovacuum/checkpoint)
+
+## O que a rodada 2 resolveu
+
+1. **nginx L7 era o gargalo sob quota**: a quota 0.15 CPU do nginx saturava a ~830 rps parseando HTTP (medição tirion); em L4, nginx fica ≤8% mesmo a 4700 rps e os APIs passam a usar as próprias quotas
+2. **Stall do GIN pending list**: sob insert storm, search levava p95 de **7.4s** quando o cleanup do pending list disparava dentro de uma query; `fastupdate=off` = sem pending list (custo: inserts ~25% mais lentos)
+3. Comparativo 3-way na mesma config (ursoc): **get C++ 0.98ms < Go 1.62ms < Rust 1.55ms**; search ~1.3ms nos três; post C++ líder
+
+## Antes → Depois (rodada 1 — mantida por referência)
 
 | Cenário | Baseline p95 → p99 | Otimizado p95 → p99 | RPS antes → depois |
 |---|---|---|---|
@@ -27,12 +54,11 @@ Branch: `feature/upgrade-benchmark` (base: `feature/to_the_infinity_and_beyond`)
 - `boost/1.83.0` quebra com Conan ≥ 2.3x (`config_options()` line 419) → `drogon/*:with_boost=False` (o cmake do drogon 1.9.13 nem usa boost)
 - `util-linux-libuuid/2.39.2` removida de todos os remotes → patch na receita baixada (uuid via `uuid-dev` do sistema) + shim CMake `UUIDConfig.cmake` + header flat `/usr/local/include/uuid.h` (o try_compile do drogon inclui `<uuid.h>` flat, Debian tem `uuid/uuid.h`)
 
-## Cauda do get-by-id (não resolvida)
-- Keep-alive: 22-200µs constantes (perfeito). Nova conexão: ~10% levam 56-88ms
-- CFS throttling confirmado (`nr_throttled`, `throttled_usec 8.5s` durante a suíte — concentra no post/search)
-- Testado sem efeito: NUM_THREADS=1, shim NODELAY (o shim mantém: keep-alive estável)
-- Suspeita restante: custo por conexão do event loop do drogon/trantor sob quota 0.25 CPU + ruído do host compartilhado
-- Impacto no mundo real: com Gatling da Rinha (sem keep-alive), essa cauda pesaria mais — investigar PR upstream no trantor
+## Cauda do get-by-id (RESOLVIDA — era ruído do host)
+- Keep-alive: 22-200µs constantes (perfeito). Nova conexão: ~10% levavam 56-88ms no ursoc
+- **Não reproduz no tirion idle**: 30 conexões novas → med 1.5ms, p90 1.6ms, max 3.8ms
+- Conclusão: cauda era ruído do ursoc (CFS throttling + containers vizinhos + buildx), não do trantor/Drogon
+- Shim NODELAY mantido: keep-alive estável em 22-200µs; 30 novas conexões no tirion: sub-4ms
 
 ## Pendências conhecidas
 - GoogleTest unit (isDateValid/to_pg_array) — não existe no repo; k6 contract-ko cobre o comportamento
