@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 
 -- Use a Trigger for materialization instead of a Generated Column
 -- because array_to_string is not IMMUTABLE.
-CREATE UNLOGGED TABLE IF NOT EXISTS people (
+CREATE TABLE IF NOT EXISTS people (
     id uuid PRIMARY KEY DEFAULT uuidv7(),
     nickname VARCHAR(32) UNIQUE NOT NULL,
     "name" VARCHAR(100) NOT NULL,

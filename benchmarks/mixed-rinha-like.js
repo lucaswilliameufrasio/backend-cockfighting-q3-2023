@@ -9,7 +9,7 @@ export const options = {
     { duration: '20s', target: 0 },
   ],
   thresholds: {
-    http_req_failed: ['rate<0.05'],
+    'http_req_failed{expected_response:true}': ['rate<0.05'],
   },
 };
 

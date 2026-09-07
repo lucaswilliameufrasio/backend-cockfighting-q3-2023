@@ -1,7 +1,7 @@
 [requires]
-zlib/1.3.1
-drogon/1.9.12
-mimalloc/2.1.2
+zlib/1.3.2
+drogon/1.9.13
+mimalloc/2.2.4
 simdjson/4.2.4
 
 [generators]
@@ -10,4 +10,5 @@ CMakeToolchain
 
 [options]
 drogon/*:with_postgres=True
+drogon/*:with_boost=False
 mimalloc/*:override=True
