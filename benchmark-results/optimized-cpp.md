@@ -9,7 +9,7 @@ sub-milissegundo eram reportados como `iteration_duration` por limitação
 do extrator; agora extrai-se a linha `http_req_duration` direto do k6).
 
 Stack: nginx **L4 `stream`** (repassa TCP puro, igual Go/Rust) + índice GIN
-**`fastupdate=off`** + pool 16 + NUM_THREADS=2. Fresh DB, ursoc, k6 nativo.
+**`fastupdate=off`** + pool 16 + NUM_THREADS=2. Fresh DB, host-a, k6 nativo.
 
 | Cenário | Rodada 1 (L7) p95 → p99 | Rodada 2 (L4) p95 → p99 | RPS 1 → 2 |
 |---|---|---|---|
@@ -25,9 +25,9 @@ Stack: nginx **L4 `stream`** (repassa TCP puro, igual Go/Rust) + índice GIN
 
 ## O que a rodada 2 resolveu
 
-1. **nginx L7 era o gargalo sob quota**: a quota 0.15 CPU do nginx saturava a ~830 rps parseando HTTP (medição tirion); em L4, nginx fica ≤8% mesmo a 4700 rps e os APIs passam a usar as próprias quotas
+1. **nginx L7 era o gargalo sob quota**: a quota 0.15 CPU do nginx saturava a ~830 rps parseando HTTP (medição host-b); em L4, nginx fica ≤8% mesmo a 4700 rps e os APIs passam a usar as próprias quotas
 2. **Stall do GIN pending list**: sob insert storm, search levava p95 de **7.4s** quando o cleanup do pending list disparava dentro de uma query; `fastupdate=off` = sem pending list (custo: inserts ~25% mais lentos)
-3. Comparativo 3-way na mesma config (ursoc): **get C++ 0.98ms < Go 1.62ms < Rust 1.55ms**; search ~1.3ms nos três; post C++ líder
+3. Comparativo 3-way na mesma config (host-a): **get C++ 0.98ms < Go 1.62ms < Rust 1.55ms**; search ~1.3ms nos três; post C++ líder
 
 ## Antes → Depois (rodada 1 — mantida por referência)
 
@@ -55,10 +55,10 @@ Stack: nginx **L4 `stream`** (repassa TCP puro, igual Go/Rust) + índice GIN
 - `util-linux-libuuid/2.39.2` removida de todos os remotes → patch na receita baixada (uuid via `uuid-dev` do sistema) + shim CMake `UUIDConfig.cmake` + header flat `/usr/local/include/uuid.h` (o try_compile do drogon inclui `<uuid.h>` flat, Debian tem `uuid/uuid.h`)
 
 ## Cauda do get-by-id (RESOLVIDA — era ruído do host)
-- Keep-alive: 22-200µs constantes (perfeito). Nova conexão: ~10% levavam 56-88ms no ursoc
-- **Não reproduz no tirion idle**: 30 conexões novas → med 1.5ms, p90 1.6ms, max 3.8ms
-- Conclusão: cauda era ruído do ursoc (CFS throttling + containers vizinhos + buildx), não do trantor/Drogon
-- Shim NODELAY mantido: keep-alive estável em 22-200µs; 30 novas conexões no tirion: sub-4ms
+- Keep-alive: 22-200µs constantes (perfeito). Nova conexão: ~10% levavam 56-88ms no host-a
+- **Não reproduz no host-b idle**: 30 conexões novas → med 1.5ms, p90 1.6ms, max 3.8ms
+- Conclusão: cauda era ruído do host-a (CFS throttling + containers vizinhos + buildx), não do trantor/Drogon
+- Shim NODELAY mantido: keep-alive estável em 22-200µs; 30 novas conexões no host-b: sub-4ms
 
 ## Pendências conhecidas
 - GoogleTest unit (isDateValid/to_pg_array) — não existe no repo; k6 contract-ko cobre o comportamento
