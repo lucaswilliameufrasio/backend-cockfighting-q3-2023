@@ -24,7 +24,10 @@ find_package(simdjson REQUIRED)
 add_executable(${PROJECT_NAME} src/main.cc)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -march=native -flto)
+    # x86-64-v3 (Haswell+): AVX2/FMA sem AVX-512 — roda em qualquer CPU x86
+    # moderna; -march=native quebra em hosts com microarquitetura diferente
+    # (SIGILL) e v3 é o máximo comum entre Zen4 e Whiskey Lake.
+    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -march=x86-64-v3 -flto)
     target_link_options(${PROJECT_NAME} PRIVATE -flto)
 endif()
 
