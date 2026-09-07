@@ -27,7 +27,8 @@ COPY . .
 
 RUN cd build && \
     cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build . --parallel $(nproc)
+    cmake --build . --parallel $(nproc) && \
+    gcc -shared -fPIC -O2 -o tcpnodelay.so ../docker/tcpnodelay.c -ldl
 
 # RUNTIME STAGE
 FROM debian:trixie-20260824-slim AS runtime
@@ -38,6 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY --from=builder /build_src/build/backend-cockfighting-api .
+COPY --from=builder /build_src/build/tcpnodelay.so .
 RUN chmod +x /app/backend-cockfighting-api
 
 CMD ["/app/backend-cockfighting-api"]

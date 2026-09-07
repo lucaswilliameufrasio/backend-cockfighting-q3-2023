@@ -11,6 +11,7 @@ services:
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=16
       - NUM_THREADS=2
+      - LD_PRELOAD=/app/tcpnodelay.so
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +41,7 @@ services:
       - DB_PASSWORD=fight
       - DB_MAX_CONNECTIONS=16
       - NUM_THREADS=2
+      - LD_PRELOAD=/app/tcpnodelay.so
     depends_on:
       db:
         condition: service_healthy

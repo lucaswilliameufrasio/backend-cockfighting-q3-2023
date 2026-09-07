@@ -65,10 +65,10 @@ struct PersonHandler {
             co_return makeResponse(drogon::k422UnprocessableEntity, "Conflict");
         }
 
-        Json::Value res;
-        res["id"] = *id;
-        auto resp = drogon::HttpResponse::newHttpJsonResponse(res);
-        resp->setStatusCode(drogon::k201Created);
+        std::string res_body = "{\"id\":";
+        appendQuoted(res_body, *id);
+        res_body += '}';
+        auto resp = jsonBodyResponse(drogon::k201Created, std::move(res_body));
         resp->addHeader("Location", "/pessoas/" + *id);
         co_return resp;
     }
@@ -81,21 +81,7 @@ struct PersonHandler {
         if (!person) {
             co_return makeResponse(drogon::k404NotFound, "Not found");
         }
-
-        Json::Value res;
-        res["id"] = person->id;
-        res["apelido"] = person->nickname;
-        res["nome"] = person->name;
-        res["nascimento"] = person->birth_date;
-        if (person->stack && !person->stack->empty()) {
-            res["stack"] = Json::arrayValue;
-            for (const auto &s : *person->stack) {
-                res["stack"].append(s);
-            }
-        } else {
-            res["stack"] = Json::nullValue;
-        }
-        co_return drogon::HttpResponse::newHttpJsonResponse(res);
+        co_return jsonBodyResponse(drogon::k200OK, personToJson(*person));
     }
 
     static drogon::Task<drogon::HttpResponsePtr> handleSearch(drogon::HttpRequestPtr req) {
@@ -105,24 +91,16 @@ struct PersonHandler {
         }
 
         auto people = co_await application::PersonService::searchPeople(term);
-        Json::Value res = Json::arrayValue;
-        for (const auto &p : people) {
-            Json::Value pj;
-            pj["id"] = p.id;
-            pj["apelido"] = p.nickname;
-            pj["nome"] = p.name;
-            pj["nascimento"] = p.birth_date;
-            if (p.stack && !p.stack->empty()) {
-                pj["stack"] = Json::arrayValue;
-                for (const auto &s : *p.stack) {
-                    pj["stack"].append(s);
-                }
-            } else {
-                pj["stack"] = Json::nullValue;
+        std::string body = "[";
+        body.reserve(64 + people.size() * 192);
+        for (size_t i = 0; i < people.size(); ++i) {
+            if (i > 0) {
+                body += ',';
             }
-            res.append(pj);
+            body += personToJson(people[i]);
         }
-        co_return drogon::HttpResponse::newHttpJsonResponse(res);
+        body += ']';
+        co_return jsonBodyResponse(drogon::k200OK, std::move(body));
     }
 
     static drogon::Task<drogon::HttpResponsePtr> handleCount(drogon::HttpRequestPtr req) {

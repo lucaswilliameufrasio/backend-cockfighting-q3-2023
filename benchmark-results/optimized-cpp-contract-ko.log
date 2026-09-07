@@ -1,0 +1,58 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: benchmarks/contract-ko.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS 
+
+    http_req_failed{expected_response:true}
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 8       456.293083/s
+    checks_succeeded...: 100.00% 8 out of 8
+    checks_failed......: 0.00%   0 out of 8
+
+    ✓ valid create 201
+    ✓ duplicate 422
+    ✓ invalid json 400
+    ✓ empty body 400 or 422
+    ✓ invalid field 422
+    ✓ missing term 400
+    ✓ not found 404
+    ✓ count 200
+
+    HTTP
+    http_req_duration..............: avg=2.07ms  min=112.51µs med=399.72µs max=12.34ms p(90)=5.44ms  p(95)=8.89ms  p(99)=11.65ms
+      { expected_response:true }...: avg=6.45ms  min=569.07µs med=6.45ms   max=12.34ms p(90)=11.16ms p(95)=11.75ms p(99)=12.22ms
+    http_req_failed................: 75.00% 6 out of 8
+      { expected_response:true }...: 0.00%  0 out of 2
+    http_reqs......................: 8      456.293083/s
+
+    EXECUTION
+    iteration_duration.............: avg=17.45ms min=17.45ms  med=17.45ms  max=17.45ms p(90)=17.45ms p(95)=17.45ms p(99)=17.45ms
+    iterations.....................: 1      57.036635/s
+
+    NETWORK
+    data_received..................: 1.6 kB 92 kB/s
+    data_sent......................: 1.2 kB 67 kB/s
+
+
+
+
+running (00m00.0s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.0s/10m0s  1/1 shared iters

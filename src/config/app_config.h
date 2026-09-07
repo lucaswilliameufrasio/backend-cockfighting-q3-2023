@@ -12,25 +12,27 @@ inline bool isDateValid(const std::string &date) {
     if (date[4] != '-' || date[7] != '-') {
         return false;
     }
-    
-    try {
-        int y = std::stoi(date.substr(0, 4));
-        int m = std::stoi(date.substr(5, 2));
-        int d = std::stoi(date.substr(8, 2));
-        if (y < 1800 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) {
+    static const size_t digit_pos[8] = {0, 1, 2, 3, 5, 6, 8, 9};
+    for (const size_t pos : digit_pos) {
+        if (date[pos] < '0' || date[pos] > '9') {
             return false;
         }
-        if (m == 2) {
-            bool leap = ((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0);
-            return leap ? d <= 29 : d <= 28;
-        }
-        if (m == 4 || m == 6 || m == 9 || m == 11) {
-            return d <= 30;
-        }
-        return true;
-    } catch (...) {
+    }
+    const int y = (date[0] - '0') * 1000 + (date[1] - '0') * 100 +
+                  (date[2] - '0') * 10 + (date[3] - '0');
+    const int m = (date[5] - '0') * 10 + (date[6] - '0');
+    const int d = (date[8] - '0') * 10 + (date[9] - '0');
+    if (y < 1800 || y > 9999 || m < 1 || m > 12 || d < 1 || d > 31) {
         return false;
     }
+    if (m == 2) {
+        const bool leap = ((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0);
+        return leap ? d <= 29 : d <= 28;
+    }
+    if (m == 4 || m == 6 || m == 9 || m == 11) {
+        return d <= 30;
+    }
+    return true;
 }
 
 struct AppConfig {

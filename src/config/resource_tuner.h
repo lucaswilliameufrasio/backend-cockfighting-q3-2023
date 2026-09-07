@@ -37,13 +37,15 @@ struct TuningProfile {
 
         TuningProfile p;
         
-        // If we are restricted by Docker (cpu_quota <= 1.0) or have very little RAM, 
+        // If we are restricted by Docker (cpu_quota <= 1.0) or have very little RAM,
         // we MUST use Constrained mode to survive the 0.4GB limit.
+        // In-memory cache is safe: person rows are immutable after create,
+        // so cached entries can never be stale.
         if ((cpu_quota > 0.0 && cpu_quota <= 1.1) || total_ram_gb < 2) {
             p.tier = HardwareTier::Constrained;
-            p.threadNum = manualThreads; 
+            p.threadNum = manualThreads;
             p.dbConnections = manualDbConnections; // Let compose control this
-            p.enableInMemCache = false;
+            p.enableInMemCache = true;
         } else if (cores <= 8) {
             p.tier = HardwareTier::Performance;
             p.threadNum = (int)cores;
