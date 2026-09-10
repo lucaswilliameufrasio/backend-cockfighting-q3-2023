@@ -23,7 +23,7 @@ CREATE TRIGGER people_searchable_trigger
 BEFORE INSERT OR UPDATE ON people
 FOR EACH ROW EXECUTE FUNCTION people_update_searchable();
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS people_search_idx ON people USING GIN(searchable gin_trgm_ops) WITH (fastupdate = off);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS people_search_idx ON people USING GIN(searchable gin_trgm_ops) WITH (fastupdate = on);
 
 -- Pre-warm the index immediately
 SELECT pg_prewarm('people_search_idx');
