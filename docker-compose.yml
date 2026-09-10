@@ -9,7 +9,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=16
+      - DB_MAX_CONNECTIONS=8
       - NUM_THREADS=2
       - LD_PRELOAD=/app/tcpnodelay.so
     depends_on:
@@ -39,7 +39,7 @@ services:
       - DB_NAME=fight
       - DB_USER=postgres
       - DB_PASSWORD=fight
-      - DB_MAX_CONNECTIONS=16
+      - DB_MAX_CONNECTIONS=8
       - NUM_THREADS=2
       - LD_PRELOAD=/app/tcpnodelay.so
     depends_on:
