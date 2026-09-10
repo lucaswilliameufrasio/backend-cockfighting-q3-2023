@@ -1,0 +1,114 @@
+name: benchmark-gatling
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gatling:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      # actions/checkout v7.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Build and start benchmark stack (branch code)
+        run: docker compose up -d --build
+
+      - name: Wait for stack to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null -w "%{http_code}" "http://localhost:9999/health-check" | grep -q 200; then
+              echo "Stack ready!"
+              exit 0
+            fi
+            echo "waiting... $i"
+            sleep 2
+          done
+          echo "Stack never became ready"
+          docker compose logs --tail 30 api1 api2 nginx db
+          exit 1
+
+      - name: Start diagnostics sampler
+        run: |
+          for i in $(seq 1 300); do
+            echo "=== t=${i}x5s $(date -u +%H:%M:%S) ===" >> docker-stats.log
+            docker stats --no-stream --format '{{.Name}} cpu={{.CPUPerc}} mem={{.MemUsage}}' >> docker-stats.log
+            sleep 5
+          done &
+          echo $! > sampler.pid
+
+      - name: Load test (Rinha Gatling)
+        run: |
+          git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2023-q3
+          cd rinha-de-backend-2023-q3
+          wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
+          unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
+          cd gatling-charts-highcharts-bundle-3.9.5
+          ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "${{ github.sha }}" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
+          echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
+        env:
+          WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
+
+      - name: Stop diagnostics sampler
+        if: always()
+        run: kill $(cat sampler.pid) 2>/dev/null || true
+
+      - name: Extract metrics and gate
+        if: always()
+        run: |
+          STATS=${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}/js/stats.json
+          TOTAL=$(jq '.stats.numberOfRequests.total' $STATS)
+          OK=$(jq '.stats.numberOfRequests.ok' $STATS)
+          KO=$(jq '.stats.numberOfRequests.ko' $STATS)
+          KO_PCT=$(jq '.stats.group4.percentage' $STATS)
+          P95=$(jq '.stats.percentiles3.total' $STATS)
+          P99=$(jq '.stats.percentiles4.total' $STATS)
+          COUNT=$(curl -s http://localhost:9999/contagem-pessoas || echo 0)
+          echo "| metric | value |" >> metrics.md
+          echo "|---|---|" >> metrics.md
+          echo "| total | $TOTAL |" >> metrics.md
+          echo "| ok | $OK |" >> metrics.md
+          echo "| ko | $KO ($KO_PCT%) |" >> metrics.md
+          echo "| p95 (ms) | $P95 |" >> metrics.md
+          echo "| p99 (ms) | $P99 |" >> metrics.md
+          echo "| contagem | $COUNT |" >> metrics.md
+          cat metrics.md >> "${GITHUB_STEP_SUMMARY}"
+          if [ "$KO" -gt 0 ]; then
+            echo "::error::Gatling KO > 0 ($KO of $TOTAL, $KO_PCT%)"
+            exit 1
+          fi
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          docker compose ps
+          docker compose logs --tail 50 api1 api2 nginx db
+          echo "=== PostgreSQL full logs (checkpoints) ==="
+          docker compose logs db | grep -E "checkpoint|wal" || true
+
+      - name: Upload diagnostics artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatling-diagnostics
+          path: |
+            docker-stats.log
+            metrics.md
+          if-no-files-found: warn
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
+      - name: Deploy results
+        uses: peaceiris/actions-gh-pages@1ef5a1b1df4c63fe21a2242edbee6cac921ece01
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}
+          destination_dir: ${{ env.GATLING_OUTPUT_FOLDER }}
+
+      - name: Summary
+        run: |
+          REPO_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)
+          echo "[Resultados](https://${{ github.repository_owner }}.github.io/${REPO_NAME}/${{ env.GATLING_OUTPUT_FOLDER }})" >> "${GITHUB_STEP_SUMMARY}"
